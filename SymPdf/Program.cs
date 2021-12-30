@@ -23,18 +23,24 @@ namespace SymPdf
 
         static void Create(string[] files)
         {
-            // HACK: 表紙が本文と同じサイズなら縦にしたい
+            // HACK: 見開き対応
+            // 　見開き対応時、表2用の白紙ファイルが必要
+
             // 前提：
-            // 　1枚目は表紙で本文の2枚分のサイズ（横）
+            // 　1枚目は表紙で本文の2枚分のサイズ（横） or 本文と同じサイズ（縦）
             // 　2枚目以降は本文（縦）
-            // 　表2用の白紙ファイルが必要
 
             // config取得、チェック
-            var coverPageSize = GetCoverPageSize().Rotate();
+            var coverPageSize = GetCoverPageSize();
             var mainPageSize = GetMainPageSize();
             var binding = GetBinding();
             var title = GetTitle();
             var author = GetAuthor();
+
+            if (coverPageSize != mainPageSize)
+            {
+                coverPageSize = coverPageSize.Rotate();
+            }
 
             // PDFファイルを作成
             var outputPath = Path.Combine(Path.GetDirectoryName(files[0]), title + ".pdf");
