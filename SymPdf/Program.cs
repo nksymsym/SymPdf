@@ -1,8 +1,11 @@
 ﻿using iText.IO.Image;
 using iText.Kernel.Geom;
 using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Action;
+using iText.Kernel.Pdf.Annot;
 using iText.Kernel.Pdf.Canvas;
 using iText.Layout;
+using iText.Layout.Element;
 using System;
 using System.Linq;
 using static System.Configuration.ConfigurationManager;
@@ -42,6 +45,9 @@ namespace SymPdf
                 coverPageSize = coverPageSize.Rotate();
             }
 
+            // リンク設定取得
+            var linksettings = Hyperlink.ReadSettings();
+
             // PDFファイルを作成
             var outputPath = Path.Combine(Path.GetDirectoryName(files[0]), title + ".pdf");
             using (var writer = new PdfWriter(outputPath))
@@ -72,6 +78,21 @@ namespace SymPdf
                     var image = ImageDataFactory.Create(file);
                     var canvas = new PdfCanvas(page);
                     canvas.AddImageFittedIntoRectangle(image, page.GetPageSize(), false);
+
+                    // リンクを挿入
+                    var links = linksettings.Where(x => x.Page == cnt);
+                    foreach (var link in links)
+                    {
+                        var border = new PdfArray(link.HasBorder ? new float[] { 1, 1, 1 } : new float[] { 0, 0, 0 });
+
+                        var action = PdfAction.CreateURI(link.Uri);
+                        var rect = new Rectangle(link.X, link.Y, link.Width, link.Height);
+                        var annotation = new PdfLinkAnnotation(rect)
+                            .SetHighlightMode(PdfAnnotation.HIGHLIGHT_INVERT)
+                            .SetAction(action)
+                            .SetBorder(border);
+                        page.AddAnnotation(annotation);
+                    }
                 }
 
                 doc.Close();
